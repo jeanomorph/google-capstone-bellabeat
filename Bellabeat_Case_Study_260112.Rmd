@@ -1,0 +1,476 @@
+---
+title: "Bellabeat: A Case Study (Leaf Tracker)"
+author: "Jeanelfe Joy Delfinado"
+date: "Jan 12, 2026"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    css: styles.css
+    # NOTE: This notebook intentionally shows all R code to demonstrate the analysis workflow.
+---
+
+<style>
+h1 { font-size: 26px; }
+h2 { font-size: 20px; }
+h3 { font-size: 17px; }
+</style>
+
+<style>
+.tocify-header {
+    padding-left: 20px !important;
+    text-indent: 0 !important;
+}
+
+/* LEVEL 2 HEADERS (##) — Subheadings */
+.tocify-subheader {
+    padding-left: 20px !important;
+    text-indent: 0 !important;
+}
+
+/* LEVEL 3 HEADERS (###) — deeper indentation if needed */
+.tocify-subheader .tocify-subheader {
+    padding-left: 40px !important;
+}
+
+</style>
+
+<div style="height:10px;"></div>
+
+# The Business Task
+Bellabeat wants to understand how users of other smart devices engage with activity, sleep, and wellness features so they can identify which behaviors are most relevant to Bellabeat customers. This analysis will help Bellabeat decide which user habits to highlight, support, or target in their marketing strategy for the Leaf.
+
+<div style="height:10px;"></div>
+
+# The Data
+The data utilized is the FitBit Fitness Tracker Data from Kaggle. It is important to note the limitations: the dataset originates from 2016 and includes only 30 participants who consented to the study.
+
+Since the Leaf product tracks activity, sleep, and stress, this case study focuses on daily movement and sleep patterns.
+
+<div style="height:3px;"></div>
+
+## Data Credibility & Integrity (ROCCC Analysis)
+* **Reliability:** Low. The sample size is small (30-33 users) and demographic information (like gender) is missing.
+* **Originality:** Low. This is third-party data collected via Amazon Mechanical Turk.
+* **Comprehensiveness:** Medium. It covers activity, sleep, and heart rate, but lacks Bellabeat-specific metrics like menstrual cycle tracking.
+* **Currentness:** Low. Data is from 2016 and may not reflect current wearable tech trends.
+* **Citations:** Properly cited via Kaggle/Mobius.
+
+<div style="height:10px;"></div>
+
+# The Process
+To ensure a reproducible and scalable analysis, I am using **R** for data transformation and visualization.
+
+<div style="height:3px;"></div>
+
+#### About this notebook
+
+This case study follows a transparent workflow. All code is shown so recruiters, reviewers, or collaborators can understand the decisions made at each stage of the analysis.
+
+<div style="height:3px;"></div>
+
+## Loading Libraries
+I will begin by loading the `tidyverse` for data manipulation, `lubridate` for handling date-time objects, and `janitor` for data cleaning.
+
+```{r, echo=TRUE}
+library(tidyverse)
+library(lubridate)
+library(janitor) 
+
+# The data sets that I will be using
+activity <- read_csv("Case Study/Fitbase_Data_160412-160512/dailyActivity_merged.csv") %>% clean_names()
+sleep <- read_csv("Case Study/Fitbase_Data_160412-160512/sleepDay_merged.csv") %>% clean_names()
+
+```
+
+<div style="height:10px;"></div>
+
+## Data Cleaning and Transformation
+
+<div style="height:3px;"></div>
+
+### 1. Data inspection
+
+For this part, I'll be using `glimpse`
+
+```{r, echo=TRUE}
+glimpse(activity)
+glimpse(sleep)
+```
+
+### 2. Fixing date columns
+
+```{r, echo=TRUE}
+activity <- activity %>%
+  mutate(activity_date = mdy(activity_date))
+
+sleep <- sleep %>%
+  mutate(sleep_day = as_date(mdy_hms(sleep_day)))
+```
+
+### 3. Merging two tables
+
+```{r, echo=TRUE}
+merged <- activity %>%
+  inner_join(sleep, by = c("id", "activity_date" = "sleep_day"))
+```
+The merged dataset combines daily activity and sleep records per user per date, allowing a unified view of daily wellness behavior.
+
+### 4. Checking if merge succeeded
+
+```{r, echo=TRUE}
+head(merged)
+```
+
+### 5. Checking and removing duplicates
+
+```{r, echo=TRUE}
+merged %>% get_dupes(id, activity_date)
+```
+```{r,echo=TRUE}
+merged <- merged %>% distinct()
+```
+
+```{r, echo=TRUE}
+merged %>% get_dupes(id, activity_date)
+```
+
+<div style="height:10px;"></div>
+
+## Summary
+
+```{r, echo=TRUE}
+summary(merged)
+
+merged %>%
+  summarise(sd_light = sd(lightly_active_minutes, na.rm = TRUE))
+```
+<div style="height:10px;"></div>
+
+<span style="font-size:18px; font-weight:bold;">Based on this summary, these are the insights I've gathered:</span>
+
+<div style="height:5px;"></div>
+
+**Daily Activity Insights**
+
+<div style="height:1px;"></div>
+
+* Users average &asymp; 8,500 steps, but 25% of days fall under 5,200 steps—showing inconsistent movement habits. **Bellabeat can position Leaf as a tool for building daily consistency rather than chasing high step goals.**
+
+<div style="height:1px;"></div>
+
+* Users log a high amount of light activity with a _median_ of &asymp; 208 minutes (&asymp; 3.5 hours). However, there's a _standard deviation_ of 40%—indicating moderate variability. This suggests that users’ movement habits fluctuate depending on schedule or lifestyle factors, indicating moderate inconsistency in light activity.
+
+<div style="height:1px;"></div>
+
+* _Moderate and intense activity are low_—Only 25% of days reach more than 27 minutes of moderate activity. **Bellabeat can target women who prefer low-impact routines, positioning Leaf as ideal for walking, household chores, and casual movement.**
+
+<div style="height:1px;"></div>
+
+* Users spend around _12 hours_ per day sedentary. **This presents a strong opportunity for Bellabeat to emphasize movement reminders, posture nudges, and inactivity alerts as key Leaf features.**
+
+<div style="height:5px;"></div>
+
+**Sleep insights**
+
+<div style="height:1px;"></div>
+
+* Most users sleep between _6–7.7 hours_, with about 25% of days falling below 6 hours. This shows inconsistency rather than strong sleep health. **Bellabeat can position Leaf as a wellness tool that helps users build regular sleep routines, track patterns, and reduce stress that affects sleep length.**
+
+<div style="height:2px;"></div>
+
+**Overall, users show moderate activity with high time spent sedentary and inconsistent sleep duration. Light activity dominates daily movement, suggesting lifestyle-driven wellness rather than workout-focused routines. These behavior patterns reveal opportunities for Bellabeat to support consistent movement and better sleep through targeted reminders and wellness-focused product messaging.**
+
+<div style="height:10px;"></div>
+
+# Analytical Questions
+
+<div style="height:5px;"></div>
+
+1. What is the relationship between daily steps and sleep duration?
+
+<div style="height:2px;"></div>
+
+2. Are users consistent in their daily activity levels?
+
+<div style="height:2px;"></div>
+
+3. How often do users meet recommended sleep duration (7–9 hours)?
+
+<div style="height:2px;"></div>
+
+4. What movement patterns appear across the week?
+
+<div style="height:5px;"></div>
+
+## Steps–Sleep Correlation
+
+```{r, echo=TRUE}
+# Correlation between steps and sleep
+merged %>% summarise(cor_steps_sleep = cor(total_steps, total_minutes_asleep))
+```
+
+With a weak negative correlation (−0.19), activity levels do not meaningfully influence how long users sleep. **This implies Bellabeat should treat activity and sleep as largely independent behaviors when creating wellness recommendations.**
+
+<div style="height:10px;"></div>
+
+```{r, echo=TRUE}
+# Measuring Consistency using Standard Deviation
+activity_stats <- merged %>%
+  summarise(
+    mean_steps = mean(total_steps, na.rm = TRUE),
+    sd_steps = sd(total_steps, na.rm = TRUE),
+    cv_steps = sd_steps / mean_steps,
+
+    mean_light = mean(lightly_active_minutes, na.rm = TRUE),
+    sd_light = sd(lightly_active_minutes, na.rm = TRUE),
+    cv_light = sd_light / mean_light,
+
+    mean_fair = mean(fairly_active_minutes, na.rm = TRUE),
+    sd_fair = sd(fairly_active_minutes, na.rm = TRUE),
+    cv_fair = sd_fair / mean_fair,
+
+    mean_very = mean(very_active_minutes, na.rm = TRUE),
+    sd_very = sd(very_active_minutes, na.rm = TRUE),
+    cv_very = sd_very / mean_very,
+
+    mean_sedentary = mean(sedentary_minutes, na.rm = TRUE),
+    sd_sedentary = sd(sedentary_minutes, na.rm = TRUE),
+    cv_sedentary = sd_sedentary / mean_sedentary
+  ) %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = c("metric", "category"),
+    names_sep = "_",
+    values_to = "value"
+  ) %>%
+  pivot_wider(
+    names_from = metric,
+    values_from = value
+  )
+
+activity_stats
+```
+
+The coefficient of variation reveals that users are highly inconsistent in moderate and vigorous activity (CV = 1.25–1.44), indicating that structured exercise is not a regular habit. Light activity and steps show moderate variability, reflecting lifestyle-driven movement rather than planned workouts. Sedentary time is the most consistent behavior (CV = 0.23), suggesting prolonged inactivity is a stable part of users’ daily routines.
+
+**These patterns highlight a strong opportunity for Bellabeat to focus on small-movement encouragement, sedentary reduction, and holistic wellness rather than high-intensity fitness content.**
+
+<div style="height:10px;"></div>
+
+```{r, echo=TRUE}
+# Percentage of users that meet the recommended sleep
+merged %>% 
+  summarise(
+    pct_meet_sleep = mean(total_minutes_asleep >= 420 & total_minutes_asleep <= 540) * 100
+  )
+```
+
+**A 46% sleep compliance rate suggests:**
+
+<div style="height:5px;"></div>
+
+* users struggle with regular routines
+
+<div style="height:2px;"></div>
+
+* sleep may be influenced by stress, work hours, or inconsistent lifestyle
+
+<div style="height:2px;"></div>
+
+* bedtime consistency is weak
+
+<div style="height:2px;"></div>
+
+* recovery habits are unstable
+
+<div style="height:5px;"></div>
+
+**Since recommended sleep is achieved less than half the time, Bellabeat can create campaigns around “small steps toward better sleep,” highlighting micro-habits (earlier wind-down, reduced screen time) supported by the Leaf.**
+
+<div style="height:10px;"></div>
+
+```{r, echo=TRUE}
+# Activity patterns across weeks
+merged <- merged %>%
+  mutate(weekday = wday(activity_date, label = TRUE, abbr = TRUE))
+
+weekday_activity <- merged %>%
+  group_by(weekday) %>%
+  summarise(
+    avg_steps = mean(total_steps, na.rm = TRUE),
+    avg_sedentary = mean(sedentary_minutes, na.rm = TRUE),
+    avg_light = mean(lightly_active_minutes, na.rm = TRUE),
+    avg_fair = mean(fairly_active_minutes, na.rm = TRUE),
+    avg_very = mean(very_active_minutes, na.rm = TRUE)
+  )
+```
+
+```{r, echo=TRUE}
+ggplot(weekday_activity, aes(x = weekday, y = avg_steps)) +
+  geom_col(fill = "#123456") +
+  labs(
+    title = "Average Daily Steps by Weekday",
+    x = "Day of the Week",
+    y = "Average Steps",
+  ) +
+  theme_minimal() +
+theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 14,
+      family = "Arial"
+    ),
+    axis.title = element_text(size = 10),
+    axis.text = element_text(size = 10)
+  )
+```
+
+<div style="height:10px;"></div>
+
+Users are _most active_ on weekends, with Saturday showing the highest step count of the week. Activity remains high at the start of the workweek (Mon–Tue), then gradually declines before reaching the lowest point on Sunday. This indicates that user movement is driven by weekend routines and early-week motivation.
+
+**Bellabeat can leverage this pattern by pushing weekend wellness content, Monday goal-setting, and Sunday recovery prompts.**
+
+<div style="height:10px;"></div>
+
+# Extended Analysis Through Visualizations
+
+```{r, warning=FALSE, echo=TRUE}
+# Histogram
+ggplot(merged, aes(x = total_minutes_asleep / 60)) +
+  geom_histogram(binwidth = .5, fill = "#123456", color = "white") +
+  scale_x_continuous(
+    limits = c(3, 10),
+    breaks = seq(3, 10, by = 1),
+    expand = c(0.01, 0)
+  ) +
+  labs(
+    title = "Distribution of Sleep Duration",
+    x = "Hours Asleep",
+    y = "Frequency"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, family = "Arial"),
+    axis.title = element_text(size = 10, family = "Arial"),
+    axis.text = element_text(size = 10, family = "Arial")
+  )
+```
+
+* This suggests average sleep health is okay but not optimal—users get close to the recommended range, but not consistently.
+
+<div style="height:2px;"></div>
+
+* There is a clear left tail around 3.5–5.5 hours, meaning:Some users frequently experience short sleep durations
+
+<div style="height:10px;"></div>
+
+```{r,echo=TRUE}
+# Preparing data
+intensity_breakdown <- merged %>%
+  select(lightly_active_minutes, fairly_active_minutes, very_active_minutes) %>%
+  summarise(
+    light = mean(lightly_active_minutes, na.rm = TRUE),
+    fair = mean(fairly_active_minutes, na.rm = TRUE),
+    very = mean(very_active_minutes, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = everything(), names_to = "intensity", values_to = "minutes")
+
+```
+
+```{r, echo=TRUE}
+# Bar Graph
+ggplot(intensity_breakdown, aes(x = intensity, y = minutes)) +
+  geom_col(fill = "#123456") +
+  labs(
+    title = "Average Daily Activity Intensity Breakdown",
+    x = "Intensity Level",
+    y = "Average Minutes"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, family = "Arial"),
+    axis.title = element_text(size = 10, family = "Arial"),
+    axis.text = element_text(size = 10, family = "Arial")
+  )
+
+```
+
+* This confirms that users prefer low-effort, lifestyle-based movement
+
+<div style="height:2px;"></div>
+
+* Users are not engaging in regular, structured moderate exercise.
+
+<div style="height:10px;"></div>
+
+# Recommendations for Bellabeat
+
+<div style="height:2px;"></div>
+
+**1. Promote Consistency Over High Performance:** Users are inconsistent with steps and light activity.Bellabeat can position Leaf as a daily habit-builder.
+
+<div style="height:2px;"></div>
+
+**2. Introduce Sedentary Interrupt Features:** Users sit ≈ 12 hours/day.Promote posture alerts, stretch reminders, “stand and reset” nudges.
+
+<div style="height:2px;"></div>
+
+**3. Support Sleep Routine Stabilization:** Sleep compliance is only 46%. Create a “Leaf Sleep Guide”: bedtime reminders, screen-time reduction cues.
+
+<div style="height:2px;"></div>
+
+**4. Design Weekend + Monday Motivation Campaigns:** Steps peak on Saturday and Monday. Use these days to push challenges, streaks, and motivational prompts.
+
+<div style="height:2px;"></div>
+
+**5. Highlight Low-Impact Wellness:** Most users do NOT engage in moderate or intense exercise. Bellabeat should emphasize walking, light movement, and lifestyle activity.
+
+<div style="height:5px;"></div>
+
+**Cons**
+
+<div style="height:2px;"></div>
+
+* Users who prefer goal-oriented or competitive fitness may feel under-served.
+
+<div style="height:2px;"></div>
+
+* Too many alerts may annoy users and lead to notification fatigue.
+
+<div style="height:2px;"></div>
+
+* Some users may disable nighttime notifications.
+
+<div style="height:2px;"></div>
+
+* Lifestyle differences mean not all users have weekends off.
+
+<div style="height:2px;"></div>
+
+* Low-intensity focus may limit opportunities for advanced metrics
+
+<div style="height:10px;"></div>
+
+# Conclusion
+
+This analysis shows that users engage in moderate daily movement, spend long hours sedentary, and display inconsistent sleep patterns. Light activity dominates their routines, while structured exercise and optimal sleep duration occur less frequently. These behaviors point to a lifestyle-driven wellness profile, where users benefit more from gentle habit-building than high-intensity fitness features.
+
+However, while the recommendations align well with observed behaviors, they also come with practical constraints.
+Some users may desire more competitive or performance-driven features. Notifications intended to improve habits may instead cause alert fatigue or be disabled. Sleep reminders may not fully influence users with irregular work schedules or high stress levels. Weekend-driven campaigns may not apply to users with nontraditional work weeks. And a focus on low-intensity wellness could limit Bellabeat’s appeal to more advanced fitness users.
+
+To balance these risks, Bellabeat can take a **flexible, user-centered approach:**
+
+* Allow customizable reminder frequency to avoid overwhelm.
+
+* Offer layered content — beginner-friendly habit nudges and optional advanced features.
+
+* Tailor sleep recommendations based on user patterns rather than enforcing strict bedtime goals.
+
+* Provide multiple “routine modes” (e.g., weekday worker, shift worker, active lifestyle).
+
+* Highlight low-impact wellness while leaving room for progression to higher activity levels.
+
+By acknowledging these limitations while still responding thoughtfully to the data, Bellabeat can position the Leaf as a holistic and adaptable wellness companion that supports real user behavior — without overstepping into rigid or intrusive behavior-change tactics. The insights gained from this analysis can guide more empathetic, personalized, and effective messaging for Bellabeat’s marketing and product strategy.
