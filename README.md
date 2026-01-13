@@ -66,3 +66,4 @@ When my time with the agency ended and I returned to studying the course, I real
 Now that I’m almost done with this program from Google, I honestly didn’t think I could generate something like this. My past self wouldn’t believe I’d ever learn R. But looking back, data has been part of my life all along. When I wanted to lose weight, I tracked my steps and learned about calorie deficit. When I got my first online job, I used spreadsheets to track my finances. I guess data was already in me — I just didn’t realize it yet.
 
 And now, I’m finally choosing a path not because someone told me to, but because it genuinely feels right. And that makes this journey worth it.
+
