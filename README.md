@@ -27,6 +27,10 @@ The HTML report includes:
 * janitor for cleaning
 * ggplot2 for visualization
 
+**Files Included**
+
+This repository contains the .rmd file, .html file, and the .nb.html file.
+
 **Disclaimer:**
 
 While I wrote the analysis, cleaned the data, interpreted the results, and structured the case study myself, I used AI as a supporting tool for parts of this project.
